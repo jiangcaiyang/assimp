@@ -112,6 +112,9 @@ struct ImportData {
 
 	// Need to log?
 	bool log;
+
+	// Properties to pass to export.
+	ExportProperties exportProperties;
 };
 
 /// \enum AssimpCmdError

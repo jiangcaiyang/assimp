@@ -201,6 +201,13 @@ corresponding preprocessor flag to selectively disable formats.
 #include "AssetLib/M3D/M3DImporter.h"
 #endif
 
+#ifndef ASSIMP_BUILD_NO_GW_IMPORTER
+#if defined(WIN32) || defined(_WIN32)
+#include <windows.h>
+#endif
+typedef BaseImporter* (*CreateGWImporter)();
+#endif
+
 namespace Assimp {
 
 // ------------------------------------------------------------------------------------------------
@@ -362,6 +369,21 @@ void GetImporterInstanceList(std::vector<BaseImporter *> &out) {
     //#ifndef ASSIMP_BUILD_NO_STEP_IMPORTER
     //    out.push_back(new StepFile::StepFileImporter());
     //#endif
+
+#ifndef ASSIMP_BUILD_NO_GW_IMPORTER
+#if defined(WIN32) || defined(_WIN32)
+    HMODULE hDllModule = LoadLibrary(TEXT("GWAssimpPlugin.dll"));
+    if (hDllModule != NULL)
+    {
+        CreateGWImporter pCreateGWImporter = reinterpret_cast<CreateGWImporter>(
+                GetProcAddress(hDllModule, "CreateGWImporter"));
+        if (pCreateGWImporter != nullptr)
+        {
+            out.push_back(pCreateGWImporter());
+        }
+    }
+#endif
+#endif
 }
 
 /** will delete all registered importers. */

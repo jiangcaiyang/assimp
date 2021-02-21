@@ -327,7 +327,8 @@ bool ExportModel(const aiScene* pOut,
 
 	// do the actual export, measure time
 	const clock_t first = clock();
-	const aiReturn res = globalExporter->Export(pOut,pID,path);
+	const aiReturn res = globalExporter->Export(pOut,pID,path, 0U,
+		&imp.exportProperties);
 
 	if (imp.showLog) {
 		PrintHorBar();

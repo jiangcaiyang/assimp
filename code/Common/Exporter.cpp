@@ -139,6 +139,14 @@ void ExportSceneM3DA(const char*, IOSystem*, const aiScene*, const ExportPropert
 void ExportAssimp2Json(const char* , IOSystem*, const aiScene* , const Assimp::ExportProperties*);
 #endif
 #ifndef ASSIMP_BUILD_NO_PBRT_EXPORTER
+#ifndef ASSIMP_BUILD_NO_GW_EXPORTER
+#if defined(WIN32) || defined(_WIN32)
+#include <windows.h>
+#endif
+typedef void (*ExportAssimp2GMDL)(const char *, IOSystem *, const aiScene *, const Assimp::ExportProperties *);
+typedef void (*ExportAssimp2GSCN)(const char *, IOSystem *, const aiScene *, const Assimp::ExportProperties *);
+#endif
+
 void ExportScenePbrt(const char*, IOSystem*, const aiScene*, const ExportProperties*);
 #endif
 
@@ -222,6 +230,26 @@ static void setupExporterArray(std::vector<Exporter::ExportFormatEntry> &exporte
 
 #ifndef ASSIMP_BUILD_NO_3MF_EXPORTER
 	exporters.push_back(Exporter::ExportFormatEntry("3mf", "The 3MF-File-Format", "3mf", &ExportScene3MF, 0));
+#endif
+#endif
+
+#ifndef ASSIMP_BUILD_NO_GW_EXPORTER
+#if defined(WIN32) || defined(_WIN32)
+    HMODULE hDllModule = LoadLibrary(TEXT("GWAssimpPlugin.dll"));
+    if (hDllModule != NULL) {
+        ExportAssimp2GMDL pExportAssimp2GMDL = reinterpret_cast<ExportAssimp2GMDL>(
+                GetProcAddress(hDllModule, "ExportAssimp2GMDL"));
+        if (pExportAssimp2GMDL != nullptr) {
+            exporters.push_back(Exporter::ExportFormatEntry(
+                    "gmdl", "GritWorld Model File Format", "gmdl", pExportAssimp2GMDL, 0));
+        }
+        ExportAssimp2GSCN pExportAssimp2GSCN = reinterpret_cast<ExportAssimp2GSCN>(
+                GetProcAddress(hDllModule, "ExportAssimp2GSCN"));
+        if (pExportAssimp2GSCN != nullptr) {
+            exporters.push_back(Exporter::ExportFormatEntry(
+                    "gscn", "GritWorld Scene File Format", "gscn", pExportAssimp2GSCN, 0));
+        }
+    }
 #endif
 
 #ifndef ASSIMP_BUILD_NO_PBRT_EXPORTER

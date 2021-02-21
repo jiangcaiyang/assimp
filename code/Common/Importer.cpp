@@ -688,6 +688,7 @@ const aiScene* Importer::ReadFile( const char* _pFile, unsigned int pFlags) {
                     pimpl->mScene->mMetaData = new aiMetadata;
                 }
                 pimpl->mScene->mMetaData->Add(AI_METADATA_SOURCE_FORMAT, aiString(ext));
+            pimpl->mScene->mMetaData->Add("sourceFilePath", aiString(pFile));
             }
 
 #ifndef ASSIMP_BUILD_NO_VALIDATEDS_PROCESS

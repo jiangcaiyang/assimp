@@ -45,6 +45,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Main.h"
 #include <assimp/ParsingUtils.h>
+#include <sstream>
 
 #ifndef ASSIMP_BUILD_NO_EXPORT
 
@@ -63,6 +64,66 @@ size_t GetMatchingFormat(const std::string &outf, bool byext = false) {
         }
     }
     return SIZE_MAX;
+}
+
+// -----------------------------------------------------------------------------------
+void ParseAndSetProperty(ExportProperties &exportProperties, 
+    const std::string &propertyName, const std::string &propertyValue) {
+    if (propertyValue == "true" || propertyValue == "false") {
+        printf("Setting boolean property: %s to %s\n", 
+            propertyName.c_str(), propertyValue.c_str());
+        globalImporter->SetPropertyBool(propertyName.c_str(), propertyValue == "true");
+        exportProperties.SetPropertyBool(propertyName.c_str(), propertyValue == "true");
+        return;
+    }
+
+    std::stringstream stringstream(propertyValue);
+    stringstream.clear(); stringstream.str(propertyValue);
+    int outInt = 0;
+    stringstream >> outInt;
+    if (!stringstream.fail()) {
+        printf("Setting int property: %s to %d\n", propertyName.c_str(), outInt);
+        globalImporter->SetPropertyInteger(propertyName.c_str(), outInt);
+        exportProperties.SetPropertyInteger(propertyName.c_str(), outInt);
+        return;
+    }
+
+    stringstream.clear(); stringstream.str(propertyValue);
+    float outFloat = 0.0f;
+    stringstream >> outFloat;
+    if (!stringstream.fail()) {
+        printf("Setting float property: %s to %f\n", propertyName.c_str(), outFloat);
+        globalImporter->SetPropertyFloat(propertyName.c_str(), outFloat);
+        exportProperties.SetPropertyFloat(propertyName.c_str(), outFloat);
+        return;
+    }
+
+    stringstream.clear(); stringstream.str(propertyValue);
+    std::string outString;
+    stringstream >> outString;
+    if (!stringstream.fail()) {
+        printf("Setting string property: %s to %s\n", propertyName.c_str(), outString.c_str());
+        globalImporter->SetPropertyString(propertyName.c_str(), outString);
+        exportProperties.SetPropertyString(propertyName.c_str(), outString);
+        return;
+    }
+
+    // Default set string property
+    printf("Setting string property: %s to %s\n", propertyName.c_str(), propertyValue.c_str());
+    globalImporter->SetPropertyString(propertyName.c_str(), propertyValue);
+    exportProperties.SetPropertyString(propertyName.c_str(), propertyValue);
+}
+
+void ParseAndSetProperties(ExportProperties& exportProperties,
+    const std::string& propertyStr) {
+    std::stringstream propertyStream(propertyStr);
+    std::string property;
+    while (std::getline(propertyStream, property, ';')) {
+        size_t colonIndex = property.find(':');
+        std::string propertyName = property.substr(0, colonIndex);
+        std::string propertyValue = property.substr(colonIndex + 1);
+        ParseAndSetProperty(exportProperties, propertyName, propertyValue);
+    }
 }
 
 // -----------------------------------------------------------------------------------
@@ -104,6 +165,13 @@ int Assimp_Export(const char *const *params, unsigned int num) {
                 outf = std::string(params[i] + 2);
         } else if (!strncmp(params[i], "--format=", 9)) {
             outf = std::string(params[i] + 9);
+        } else if (!strncmp(params[i], "-p=", 3)) {
+            unsigned int j = 3;
+            while (params[i][j] != '\0') {
+                j++;
+            }
+            ParseAndSetProperties(import.exportProperties,
+                std::string(params[i] + 3, j - 3));
         }
     }
 
